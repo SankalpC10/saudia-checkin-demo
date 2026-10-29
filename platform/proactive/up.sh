@@ -6,4 +6,4 @@ PROACTIVE="${PROACTIVE_REPO:-$HOME/PycharmProjects/rt-ai-proactive-monitoring}"
 export SAUDIA_PLATFORM="$(cd "$HERE/.." && pwd)"
 export AGENT_HOST_PORT=8002
 docker compose -f "$PROACTIVE/docker-compose.yml" -f "$HERE/compose.override.yml" \
-  up -d --build mongodb agent anomaly-scorer "$@"
+  up -d mongodb agent anomaly-scorer "$@"   # add --build to rebuild images

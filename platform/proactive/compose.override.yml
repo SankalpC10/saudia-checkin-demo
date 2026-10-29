@@ -16,8 +16,14 @@ services:
       VL_URL: http://host.docker.internal:9428
       LOCAL: "false"
       SERVICE_NAME: checkin-service
-      # Demo-sized training: learn from the last 3h, need 30 one-minute points.
-      FIT_WINDOW: 3h
+      # Demo-sized training. The scorer hard-codes 180 points (3h at 1-min step) before it leaves
+      # cold start, so the window is 4h and the service needs 3h of healthy traffic first.
+      FIT_WINDOW: 4h
       MIN_TRAINING_POINTS: "30"
       TRAIN_INTERVAL_S: "1800"
       STARTUP_JITTER_S: "0"
+      # Service-level ratios. The scorer's defaults divide series one by one, which for an app
+      # labelled by route/pod/status returns no data while healthy and exactly 1.0 when failing.
+      ERROR_RATE_EXPR: '(sum(rate(http_requests_total{status=~"5..",{label}="{service}"}[1m])) or vector(0)) / sum(rate(http_requests_total{{label}="{service}"}[1m]))'
+      THROUGHPUT_EXPR: 'sum(rate(http_requests_total{{label}="{service}"}[1m]))'
+      LATENCY_EXPR: 'histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{{label}="{service}"}[2m])))'

@@ -31,7 +31,8 @@ platform/proactive/up.sh
 compose file (set `PROACTIVE_REPO` if that repo is not in `~/PycharmProjects`). The overlay:
 - points both services at the host VictoriaMetrics and VictoriaLogs,
 - mounts `tenants.yaml` (tenant `saudia-demo`, service `checkin-service`), so no MongoDB provisioning record is needed,
-- shrinks scorer training to a 3-hour window with 30 points, so it can train after about 30 minutes of healthy traffic.
+- overrides the scorer error-rate, throughput and latency queries with service-level sums (the defaults divide series one by one),
+- uses a 4-hour training window. The scorer hard-codes 180 one-minute points before it leaves cold start, so `checkin-service` needs 3 hours of healthy traffic before the scorer can score.
 
 ## Check it
 
