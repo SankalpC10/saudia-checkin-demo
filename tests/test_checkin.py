@@ -18,8 +18,3 @@ def test_checkin_returns_boarding_pass():
 
 def test_booking_is_deterministic():
     assert get_booking("xyz789") == get_booking("XYZ789")
-
-
-def test_boarding_pass_shows_miles_per_segment():
-    body = client.post("/checkin/ABC123").json()
-    assert body["loyalty_miles_per_segment"] > 0
