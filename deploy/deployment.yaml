@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: checkin-service
-          image: ghcr.io/sankalpc10/saudia-checkin-demo:2876550ab9b6fe2028066ebb30b70cc25744f18e
+          image: ghcr.io/sankalpc10/saudia-checkin-demo:34c0af12f90257d3b3c66925116a58988d477f5c
           ports:
             - containerPort: 8080
           readinessProbe:
