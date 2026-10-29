@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkin-service
+  namespace: checkin
+  labels:
+    app: checkin-service
+spec:
+  selector:
+    app: checkin-service
+  ports:
+    - port: 80
+      targetPort: 8080

@@ -1,0 +1,27 @@
+# Simulated passengers: ~5 check-ins per second against random PNRs.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkin-traffic
+  namespace: checkin
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: checkin-traffic }
+  template:
+    metadata:
+      labels: { app: checkin-traffic }
+    spec:
+      containers:
+        - name: traffic
+          image: curlimages/curl:8.11.1
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              while true; do
+                pnr=$(tr -dc 'A-Z0-9' </dev/urandom | head -c 6)
+                curl -s -o /dev/null -X POST "http://checkin-service/checkin/${pnr}"
+                sleep 0.2
+              done
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
