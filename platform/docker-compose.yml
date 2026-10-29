@@ -1,0 +1,38 @@
+# Local observability backends for the Rtifact prototype.
+# kind workloads write here through host.docker.internal; the proactive agent reads here.
+name: saudia-observability
+
+services:
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.106.1
+    ports: ["8428:8428"]
+    command: ["--storageDataPath=/storage", "--retentionPeriod=7d", "--httpListenAddr=:8428"]
+    volumes: [vm-data:/storage]
+    restart: unless-stopped
+
+  victorialogs:
+    image: victoriametrics/victoria-logs:v1.0.0-victorialogs
+    ports: ["9428:9428"]
+    command: ["--storageDataPath=/vlogs", "--retentionPeriod=7d"]
+    volumes: [vl-data:/vlogs]
+    restart: unless-stopped
+
+  vmalert:
+    image: victoriametrics/vmalert:v1.106.1
+    ports: ["8880:8880"]
+    volumes: ["./vmalert-rules.yaml:/rules.yaml:ro"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    command:
+      - --datasource.url=http://victoriametrics:8428
+      - --remoteWrite.url=http://victoriametrics:8428
+      - --remoteRead.url=http://victoriametrics:8428
+      - --rule=/rules.yaml
+      # vmalert appends /api/v2/alerts; the proactive agent listens there on host port 8002
+      - --notifier.url=http://host.docker.internal:8002/proactive-anomaly
+      - --evaluationInterval=30s
+    depends_on: [victoriametrics]
+    restart: unless-stopped
+
+volumes:
+  vm-data:
+  vl-data:

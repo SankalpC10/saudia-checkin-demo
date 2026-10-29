@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths-ignore: ["deploy/**", "argocd/**", "*.md"]
+    paths-ignore: ["deploy/**", "argocd/**", "platform/**", "*.md"]
 
 permissions:
   contents: write

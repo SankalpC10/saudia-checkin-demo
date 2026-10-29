@@ -1,0 +1,7 @@
+# Local tenant for the prototype (YAML registry; no MongoDB provisioning record needed).
+tenants:
+  - account_id: 0
+    project_id: 0
+    tenant_id: "saudia-demo"
+    services:
+      - "checkin-service"

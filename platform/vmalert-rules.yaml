@@ -1,0 +1,19 @@
+# Threshold guard-rail. The proactive pre-flight poller is meant to fire before this does.
+groups:
+  - name: checkin_service
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: >
+          sum(rate(http_requests_total{status=~"5..",service_name="checkin-service"}[2m]))
+          /
+          sum(rate(http_requests_total{service_name="checkin-service"}[2m])) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+          trigger: error_rate
+          service_name: checkin-service
+          namespace: checkin
+        annotations:
+          summary: "High error rate on checkin-service"
+          description: "Error rate {{ $value | humanizePercentage }} is above the 5% threshold."

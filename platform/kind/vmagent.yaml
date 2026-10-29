@@ -1,0 +1,69 @@
+# Scrapes pods annotated prometheus.io/scrape=true and remote-writes to VictoriaMetrics on the host.
+apiVersion: v1
+kind: Namespace
+metadata: { name: observability }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: vmagent, namespace: observability }
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata: { name: vmagent }
+rules:
+  - apiGroups: [""]
+    resources: [pods, nodes, services, endpoints]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata: { name: vmagent }
+roleRef: { apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: vmagent }
+subjects: [{ kind: ServiceAccount, name: vmagent, namespace: observability }]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: { name: vmagent-config, namespace: observability }
+data:
+  scrape.yaml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: annotated-pods
+        kubernetes_sd_configs: [{ role: pod }]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            regex: "true"
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            regex: (.+);(.+)
+            replacement: $1:$2
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            regex: (.+)
+            target_label: __metrics_path__
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: vmagent, namespace: observability }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: vmagent } }
+  template:
+    metadata: { labels: { app: vmagent } }
+    spec:
+      serviceAccountName: vmagent
+      containers:
+        - name: vmagent
+          image: victoriametrics/vmagent:v1.106.1
+          args:
+            - -promscrape.config=/config/scrape.yaml
+            - -remoteWrite.url=http://host.docker.internal:8428/api/v1/write
+          volumeMounts: [{ name: config, mountPath: /config }]
+      volumes: [{ name: config, configMap: { name: vmagent-config } }]

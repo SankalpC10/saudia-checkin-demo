@@ -1,0 +1,23 @@
+# Overlay on rt-ai-proactive-monitoring/docker-compose.yml: point the agent and the
+# anomaly scorer at the local VictoriaMetrics/VictoriaLogs and the demo tenant.
+services:
+  agent:
+    environment:
+      VM_URL: http://host.docker.internal:8428
+      VL_URL: http://host.docker.internal:9428
+      LOCAL: "false"
+    volumes:
+      - ${SAUDIA_PLATFORM}/proactive/tenants.yaml:/config/tenants.yaml:ro
+
+  anomaly-scorer:
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    environment:
+      VM_URL: http://host.docker.internal:8428
+      VL_URL: http://host.docker.internal:9428
+      LOCAL: "false"
+      SERVICE_NAME: checkin-service
+      # Demo-sized training: learn from the last 3h, need 30 one-minute points.
+      FIT_WINDOW: 3h
+      MIN_TRAINING_POINTS: "30"
+      TRAIN_INTERVAL_S: "1800"
+      STARTUP_JITTER_S: "0"
